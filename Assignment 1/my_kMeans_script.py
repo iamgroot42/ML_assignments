@@ -1,29 +1,27 @@
-# import sklearn
+from sklearn.manifold import TSNE
+from sklearn import metrics
 import sys
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-def sq_norm(x):
-	x_norm = 0
-	for entry in x:
-		x_norm += entry ** 2
-	return x_norm
-
-
-def sub_vec(x,y):
-	subtracted_vector = []
-	x_len = len(x)
-	for i in range(x_len):
-		subtracted_vector.append(x[i] - y[i])
-	return subtracted_vector
+def loss_function(indicator, X, centroids):
+	K = centroids.shape[0]
+	N = X.shape[0]
+	cost = 0
+	for i in range(N):
+		for j in range(K):
+			cost += indicator[j][i] * (np.linalg.norm(X[i]-centroids[j]) ** 2)
+	return cost
 
 
 def fix_u_solve_r(indicator, X, centroids):
-	K = len(centroids)
-	N = len(X)
+	K = centroids.shape[0]
+	N = X.shape[0]
 	for i in range(N):
 		arg_min = 0
 		for j in range(K):
-			if sq_norm(sub_vec(X[i],centroids[j])) < sq_norm(sub_vec(X[i],centroids[arg_min])):
+			if np.linalg.norm(X[i]-centroids[j]) < np.linalg.norm(X[i]-centroids[arg_min]):
 				arg_min = j
 		for j in range(K):
 			if j == arg_min:
@@ -33,11 +31,11 @@ def fix_u_solve_r(indicator, X, centroids):
 
 
 def fix_r_solve_u(indicator, X, centroids):
-	for centroid in range(len(centroids)):
-		numerator = 0
-		denominator = float(sum(indicator[centroid]))
-		N = len(indicator[centroid])
-		feature_space = len(X[0])
+	N = indicator.shape[1]
+	K = indicator.shape[0]
+	for centroid in range(K):
+		denominator = indicator[centroid].sum()
+		feature_space = X.shape[1]
 		numerator = []
 		for i in range(feature_space):
 			temp_numerator = 0
@@ -58,21 +56,25 @@ def my_kMeans(X, initial_centroids, max_iters):
 	newCentroid:- Matrix storing final cluster centroids.
 	evaluationMatrix:- Array that returns MI, AMI, RI, ARI.
 	"""
-	K = len(initial_centroids)
-	N = len(X)
-	indicator = []
-	# Create a K*N matrix
-	for i in range(K):
-		inner_temp = []
-		for j in range(N):
-			inner_temp.append(0)
-		indicator.append(inner_temp)
-	newCentroid = initial_centroids
+	main_data = X[:,:-1].astype(float)
+	ground_truth = X[:,-1]
+	K = initial_centroids.shape[0]
+	N = main_data.shape[0]
+	# TSNE visualization
+	# model = TSNE()
+	# tsne_data = model.fit_transform(main_data) #Transformed TSNE data, ready for visualization
+	# plt.scatter(tsne_data[:,0], tsne_data[:,1])
+	# plt.title('TSNE visualization for given data')
+	# plt.show()
+	# Create a K*N indicator matrix
+	indicator = np.zeros((K, N))
+	newCentroid = initial_centroids.astype(float)
 	number_iters = 0
 	# Train kn
 	for _ in range(max_iters):
-		fix_u_solve_r(indicator, X, newCentroid)
-		fix_r_solve_u(indicator, X, newCentroid)
+		fix_u_solve_r(indicator, main_data, newCentroid)
+		fix_r_solve_u(indicator, main_data, newCentroid)
+		print "Loss function:",loss_function(indicator, main_data, newCentroid)
 	# test knn
 	predicted_labels = []
 	for i in range(N):
@@ -80,25 +82,43 @@ def my_kMeans(X, initial_centroids, max_iters):
 			if indicator[j][i] == 1:
 				predicted_labels.append(j+1)
 				break
-	print predicted_labels 
-	# return newCentroid, evaluationMatrix
-	return newCentroid
+	predicted_labels  = np.array(predicted_labels)
+	# Metric calculation
+	ground_mapping = {}
+	modified_ground_mapping = []
+	counter = 0.0
+	for x in ground_truth:
+		if x in ground_mapping:
+			modified_ground_mapping.append(ground_mapping[x])
+		else:
+			counter += 1.0
+			ground_mapping[x] = counter
+			modified_ground_mapping.append(counter)
+	modified_ground_mapping = np.array(modified_ground_mapping)
+	MI = metrics.normalized_mutual_info_score(predicted_labels, modified_ground_mapping)
+	AMI = metrics.adjusted_mutual_info_score(predicted_labels, modified_ground_mapping)
+	RI = metrics.adjusted_rand_score(predicted_labels, modified_ground_mapping)
+	ARI = metrics.adjusted_rand_score(predicted_labels, modified_ground_mapping)
+	evaluationMatrix = [MI, AMI, RI, ARI]
+	return newCentroid, evaluationMatrix
 
 
 def parse_data(file_name):
 	f = open(file_name)
-	X = []
 	labels = []
-	for line in f:	
-		entry = line.rstrip().split()
-		entry = map(lambda x: float(x), entry)
-		labels.append(int(entry[-1]))
-		X.append(entry[:-1])
-	return X, labels
+	X = []
+	for line in f:
+		if line == '\n':
+			break
+		entry = line.rstrip().replace(',',' ').split()
+		X.append(entry)
+	return np.array(X)
 
 
 if __name__ == "__main__":
-	X, labels = parse_data(sys.argv[1])
-	initial_centroids = X[0:3]
-	final_centroids =  my_kMeans(X, initial_centroids, 10)
-	print labels
+	X = parse_data(sys.argv[1])
+	K = int(sys.argv[2])
+	np.random.shuffle(X) #Randomness :)
+	initial_centroids = X[:,:-1][:K] # We don't need last column (labels)
+	final_centroids, ev_mat =  my_kMeans(X, initial_centroids, 10)
+	print ev_mat
