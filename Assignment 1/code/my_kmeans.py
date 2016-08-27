@@ -1,10 +1,10 @@
-from sklearn.manifold import TSNE
 from sklearn import metrics
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import ri
 
 
+# Loss function (calculated to make sure that algorithm is converging)
 def loss_function(indicator, X, centroids):
 	K = centroids.shape[0]
 	N = X.shape[0]
@@ -15,6 +15,7 @@ def loss_function(indicator, X, centroids):
 	return cost
 
 
+# Step that fixes centroids, solves for allocation of points to clusters
 def fix_u_solve_r(indicator, X, centroids):
 	K = centroids.shape[0]
 	N = X.shape[0]
@@ -30,6 +31,7 @@ def fix_u_solve_r(indicator, X, centroids):
 				indicator[j][i] = 0
 
 
+# Step that fixes allocations, solves for centroids
 def fix_r_solve_u(indicator, X, centroids):
 	N = indicator.shape[1]
 	K = indicator.shape[0]
@@ -45,6 +47,7 @@ def fix_r_solve_u(indicator, X, centroids):
 		centroids[centroid] = numerator
 
 
+# Main k-means function
 def my_kMeans(X, initial_centroids, max_iters):
 	"""Runs k-means for given data and computes some metrics.
 	Input parameters:
@@ -60,22 +63,20 @@ def my_kMeans(X, initial_centroids, max_iters):
 	ground_truth = X[:,-1]
 	K = initial_centroids.shape[0]
 	N = main_data.shape[0]
-	# TSNE visualization
-	# model = TSNE()
-	# tsne_data = model.fit_transform(main_data) #Transformed TSNE data, ready for visualization
-	# plt.scatter(tsne_data[:,0], tsne_data[:,1])
-	# plt.title('TSNE visualization for given data')
-	# plt.show()
-	# Create a K*N indicator matrix
 	indicator = np.zeros((K, N))
 	newCentroid = initial_centroids.astype(float)
 	number_iters = 0
-	# Train kn
-	for _ in range(max_iters):
+	# Train knn
+	X_AXIS = []
+	Y_AXIS = []
+	for i in range(max_iters):
 		fix_u_solve_r(indicator, main_data, newCentroid)
 		fix_r_solve_u(indicator, main_data, newCentroid)
-		print "Loss function:",loss_function(indicator, main_data, newCentroid)
-	# test knn
+		loss = loss_function(indicator, main_data, newCentroid)
+		print "Loss function:",loss
+		Y_AXIS.append(loss)
+		X_AXIS.append(i+1)
+	# Test knn
 	predicted_labels = []
 	for i in range(N):
 		for j in range(K):
@@ -97,28 +98,11 @@ def my_kMeans(X, initial_centroids, max_iters):
 	modified_ground_mapping = np.array(modified_ground_mapping)
 	MI = metrics.normalized_mutual_info_score(predicted_labels, modified_ground_mapping)
 	AMI = metrics.adjusted_mutual_info_score(predicted_labels, modified_ground_mapping)
-	RI = metrics.adjusted_rand_score(predicted_labels, modified_ground_mapping)
+	RI = ri.rand_score(predicted_labels, modified_ground_mapping)
 	ARI = metrics.adjusted_rand_score(predicted_labels, modified_ground_mapping)
 	evaluationMatrix = [MI, AMI, RI, ARI]
+	# Uncomment to generate error-iteration curves
+	# plt.plot(X_AXIS, Y_AXIS)
+	# plt.title('Error v/s Iteration plot')
+	# plt.show()
 	return newCentroid, evaluationMatrix
-
-
-def parse_data(file_name):
-	f = open(file_name)
-	labels = []
-	X = []
-	for line in f:
-		if line == '\n':
-			break
-		entry = line.rstrip().replace(',',' ').split()
-		X.append(entry)
-	return np.array(X)
-
-
-if __name__ == "__main__":
-	X = parse_data(sys.argv[1])
-	K = int(sys.argv[2])
-	np.random.shuffle(X) #Randomness :)
-	initial_centroids = X[:,:-1][:K] # We don't need last column (labels)
-	final_centroids, ev_mat =  my_kMeans(X, initial_centroids, 10)
-	print ev_mat
