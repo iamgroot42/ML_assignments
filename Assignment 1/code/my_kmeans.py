@@ -1,6 +1,7 @@
 from sklearn import metrics
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import mixture
 import ri
 
 
@@ -106,3 +107,39 @@ def my_kMeans(X, initial_centroids, max_iters):
 	# plt.title('Error v/s Iteration plot')
 	# plt.show()
 	return newCentroid, evaluationMatrix
+
+
+# Bonus GMM code
+def my_GMM(X,K):
+	"""Runs GMM for given data and computes some metrics.
+	Input parameters:
+	X:- Data set matrix where each row of X is represents a single training example.
+	initial_centroids:- Matrix storing initial centroid position.
+	max_iters:- Maximum number of iterations that K means should run for.
+
+	Return values:
+	newCentroid:- Matrix storing final cluster centroids.
+	evaluationMatrix:- Array that returns MI, AMI, RI, ARI.
+	"""
+	main_data = X[:,:-1].astype(float)
+	ground_truth = X[:,-1]
+	gmm = mixture.GMM(n_components=K)
+	predicted_labels = gmm.fit_predict(main_data)
+	# Metric calculation
+	ground_mapping = {}
+	modified_ground_mapping = []
+	counter = 0.0
+	for x in ground_truth:
+		if x in ground_mapping:
+			modified_ground_mapping.append(ground_mapping[x])
+		else:
+			counter += 1.0
+			ground_mapping[x] = counter
+			modified_ground_mapping.append(counter)
+	modified_ground_mapping = np.array(modified_ground_mapping)
+	MI = metrics.normalized_mutual_info_score(predicted_labels, modified_ground_mapping)
+	AMI = metrics.adjusted_mutual_info_score(predicted_labels, modified_ground_mapping)
+	RI = ri.rand_score(predicted_labels, modified_ground_mapping)
+	ARI = metrics.adjusted_rand_score(predicted_labels, modified_ground_mapping)
+	evaluationMatrix = [MI, AMI, RI, ARI]
+	return  predicted_labels, evaluationMatrix

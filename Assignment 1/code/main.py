@@ -66,26 +66,39 @@ if __name__ == "__main__":
 	np.random.shuffle(X) #Randomness
 	initial_centroids = X[:,:-1][:K] # We don't need last column (labels)
 	final_centroids, ev_mat =  my_kmeans.my_kMeans(X, initial_centroids, 10)
-	# TSNE visualization (before)
 	data = X[:,:-1].astype(float)
+	# TSNE visualization (before)
+	GMM_labels, ev_mat_gmm = my_kmeans.my_GMM(X,K)
 	print "Original data distribution <graph generated>"
 	visualize_tsne(sys.argv[1] + ' : original', data,X[:,-1])
 	# TSNE visualization (after)
 	print "Data distribution k-means clustering <graph generated>"
 	visualize_tsne(sys.argv[1] + ' : with k = ' + str(K), data,labels_from_centroids(data, final_centroids))
+	print "Data distribution GMM clustering <graph generated>"
+	visualize_tsne(sys.argv[1] + ' : with GMM, k= ' + str(K), data, GMM_labels)
 	# Average readings over 10 runs
 	metrics = [0.0,0.0,0.0,0.0]
+	gmm_metrics = [0.0,0.0,0.0,0.0]
 	for i in range(10):
 		np.random.shuffle(X)
 		initial_centroids = X[:,:-1][:K]
 		print str(i+1)+"th run"
 		final_centroids, ev_mat =  my_kmeans.my_kMeans(X, initial_centroids, 10)
+		final_centroids, ev_mat_gmm = my_kmeans.my_GMM(X,K)
 		print ""
 		for j in range(4):
 			metrics[j] += ev_mat[j]
+			gmm_metrics[j] += ev_mat_gmm[j]
 	for j in range(4):
 		metrics[j] /= 10.0
+		gmm_metrics[j] /= 10.0
+	print "For k-means:"
 	print "MI:",metrics[0]
 	print "AMI:",metrics[1]
 	print "RI:",metrics[2]
 	print "ARI:",metrics[3]
+	print "For GMM:"
+	print "MI:",gmm_metrics[0]
+	print "AMI:",gmm_metrics[1]
+	print "RI:",gmm_metrics[2]
+	print "ARI:",gmm_metrics[3]
