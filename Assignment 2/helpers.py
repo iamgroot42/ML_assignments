@@ -11,8 +11,14 @@ def kernel_function(x):
 
 def MSE(y, y_cap, theta, lamb = 0):
 	diff_vec = y - y_cap
-	error = np.sum(np.transpose(diff_vec) * (diff_vec))
+	error = np.linalg.norm(diff_vec)
 	if lamb:
-		norm = np.linalg.norm(theta)
-		error += theta * norm * norm
+		theta_norm = np.linalg.norm(theta)
+		error += theta * theta_norm * theta_norm
 	return error
+
+
+def gradient(X, theta, y, lamb):
+	n = X.shape[0]
+	X_tr = np.transpose(X)
+	return 2.0 * ( (-X_tr * y) + (theta * (X_tr * X + lamb * np.identity(n)) ) )
