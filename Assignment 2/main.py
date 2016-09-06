@@ -1,5 +1,4 @@
 import linear_regression
-import logistic_regression
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
@@ -54,8 +53,22 @@ def k_fold_cross_validation(X, y, k, iters):
 	return errors
 
 
+def visualize_points(X, y, iters):
+	# Visualize 'what'? :|
+	theta = linear_regression.linear_regression(X, y, iters)[0]
+	y_cap = X * theta
+	plt.scatter(y, y_cap, c = ['red','blue'])
+	plt.title('Actual points v/s Points after plotting')
+	plt.show()
+
+
 if __name__ == "__main__":
 	fname = sys.argv[1]
+	iterations = int(sys.argv[2])
 	X,Y = read_file(fname)
-	# plot_graph(50,90,10,X,Y,10)
-	print k_fold_cross_validation(X,Y,10,10)
+	# Plot data v/s MSE graph
+	plot_graph(50,90,10,X,Y,iterations)
+	# Print mean, variance of erors for 10-fold cross validation
+	print k_fold_cross_validation(X,Y,10,iterations)
+	# Visualize fitting the points using the trained model
+	# visualize_points(X, Y, iterations)
