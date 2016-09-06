@@ -1,14 +1,18 @@
-import numpy
+import numpy as np
 import helpers
 
 
-def linear_regression(X, phi, max_itr, initial_del):
+def linear_regression(X, phi, max_itr, initial_del = 0):
 	n = X.shape[0]
 	# Learning rate (hyperparameter)
-	learning_rate = 0.01
+	learning_rate = 1e-4
 	# Randomly initialized weights
-	theta = np.random.rand(X.shape[1], 1)
+	final_parameters = np.random.rand(X.shape[1], 1)
 	for i in range(max_itr):
-		theta = theta - learning_rate * gradient(X, theta, phi, initial_del)
-		print MSE(phi, np.transpose(theta)*X, theta, initial_del)
+		# print learning_rate * helpers.gradient(X, final_parameters, phi, initial_del)
+		final_parameters = final_parameters - learning_rate * helpers.gradient(X, final_parameters, phi, initial_del)
+		# print helpers.MSE(phi, X * final_parameters, final_parameters, initial_del)
+	J = helpers.MSE(phi, X * final_parameters, final_parameters, initial_del)
+	# Evaluation matrix; contains various metrics
+	evaluationMatrix = []
 	return [final_parameters, J, evaluationMatrix]
