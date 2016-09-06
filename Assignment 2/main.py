@@ -2,6 +2,31 @@ import linear_regression
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
+import helpers
+
+
+def linear_kernel(X):
+	Z = []
+	for y in X:
+		Z.append([1.0, y.item(0)])
+	return np.matrix(Z)
+
+
+def poly_kernel(X, d):
+	Z = []
+	print X.shape
+	for y in X:
+		base = 1
+		temp = []
+		for i in range(d):
+			temp.append(base)
+			base *= y.item(0)
+		Z.append(temp[:])
+	return np.matrix(Z)
+
+
+def rbf_kernel(X, d):
+	return X
 
 
 def read_file(file, add_bias = True):
@@ -10,15 +35,17 @@ def read_file(file, add_bias = True):
 	y_arr = []
 	for x in f:
 		zeta = x.rstrip().split(',')
-		data_row = zeta[:-1]
-		# Add '1' for intercept term
-		if(add_bias):
-			data_row.insert(0,1) 
-		x_arr.append(data_row[:])
+		x_arr.append(zeta[:-1][:])
 		y_arr.append(zeta[-1:])
 	X = np.matrix(x_arr).astype(float)
 	Y = np.matrix(y_arr).astype(float)
-	return X,Y
+	# Uncomment for linear kernel
+	kernel_X = linear_kernel(X)
+	# Uncomment for polynomial kernel
+	# kernel_X = poly_kernel(X, 1)
+	# Uncomment for gaussian kernel
+	# kernel_X = rbf_kernel(X, 5)
+	return kernel_X, Y
 
 
 def plot_graph(start_percentage, end_percentage, step_size, X, y, iters):
@@ -35,7 +62,7 @@ def plot_graph(start_percentage, end_percentage, step_size, X, y, iters):
 	plt.show()
 
 
-def k_fold_cross_validation(X, y, k, iters):
+def k_fold_cross_validation(X, y, k, iters, initial_del):
 	errors = []
 	start = 0
 	eff_k = int((k * len(X))/100.0)
@@ -48,27 +75,29 @@ def k_fold_cross_validation(X, y, k, iters):
 		training_labels = np.append(left_labels, right_labels, 0)
 		validation_data = X[start:start + eff_k]
 		validation_labels = y[start:start + eff_k]
-		errors.append(linear_regression.linear_regression(training_data, training_labels, iters)[1])
+		theta = linear_regression.linear_regression(training_data, training_labels, iters)[0]
+		errors.append(helpers.MSE(validation_labels, validation_data * theta, theta, initial_del))
 		start += eff_k
 	return errors
 
 
-def visualize_points(X, y, iters):
-	# Visualize 'what'? :|
+def visualize_2d_points(X, y, iters):
 	theta = linear_regression.linear_regression(X, y, iters)[0]
 	y_cap = X * theta
-	plt.scatter(y, y_cap, c = ['red','blue'])
-	plt.title('Actual points v/s Points after plotting')
+	plt.plot(X[:,1], y_cap)
+	plt.scatter(X[:,1], y, c = 'green')
+	plt.title('Actual points & Line produced by optimizing Theta')
 	plt.show()
 
 
 if __name__ == "__main__":
 	fname = sys.argv[1]
 	iterations = int(sys.argv[2])
+	initial_del = float(sys.argv[3])
 	X,Y = read_file(fname)
 	# Plot data v/s MSE graph
-	plot_graph(50,90,10,X,Y,iterations)
+	# plot_graph(50,90,10,X,Y,iterations)
 	# Print mean, variance of erors for 10-fold cross validation
-	print k_fold_cross_validation(X,Y,10,iterations)
+	print k_fold_cross_validation(X,Y,10,iterations,initial_del)
 	# Visualize fitting the points using the trained model
-	# visualize_points(X, Y, iterations)
+	# visualize_2d_points(X, Y, iterations)
