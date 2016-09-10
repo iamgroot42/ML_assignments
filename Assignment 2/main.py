@@ -52,60 +52,29 @@ def visualize_2d_points(data, phi, iters, delta):
 	raw_X, y = helpers.get_X_Y(data)
 	X = phi(raw_X)
 	y_cap = X * theta
-	plt.scatter(X[:,1], y_cap, c = 'red')
-	plt.scatter(X[:,1], y, c = 'green')
+	plt.scatter(raw_X[:,0], y_cap, c = 'red')
+	plt.scatter(raw_X[:,0], y, c = 'green')
 	plt.title('Actual points & Points produced by optimizing Theta')
 	plt.show()
 
 
 if __name__ == "__main__":
+	# Change learning rate (according to data-set) in linear_regression.py 
 	fname = sys.argv[1]
 	iterations = int(sys.argv[2])
 	delta = float(sys.argv[3])
 	DATA = read_file(fname)
-	phi = helpers.poly_kernel
-	# phi = helpers.linear_kernel
+	phi = helpers.linear_kernel # Linear kernel
+	# phi = helpers.poly_kernel # Polyomial kernel (change degree in helpers.py)
+	# phi = helpers.rbf_kernel # RBF kernel (change sigma in helpers.py)
 	# Plot data v/s MSE graph
 	A,B = plot_graph(50, 90, 10, DATA, phi, iterations, delta)
-	plt.plot(A, B)
-	plt.title('Data ratio v/s MSE curve for ' + fname + ' (ridge-2 kernel, delta=' + str(delta) +  ')')
+	plt.plot(A, B, c = 'blue')
+	plt.title('Data ratio v/s MSE curve for ' + fname + ' (ridge, linear kernel, delta = ' + str(delta) + ')')
 	plt.show()
 	# Print mean, variance of erors for 10-fold cross validation
 	mean, variance = k_fold_cross_validation(DATA, phi, 10, iterations, delta)
 	print "Mean error(over 10-fold cross validation):", mean
 	print "Mean variance(over 10-fold cross validation):", variance
-	# Visualize fitting the points using the trained model
+	# Visualize fitting the points using the trained model (only for data with one feature (without phi))
 	# visualize_2d_points(DATA, phi, iterations, delta)
-
-
-# Linear
-# For lin : 1e-2 (learning rate)
-# For sph : 1e-4 (learning rate)
-
-# Poly(2)
-# For lin : 1e-6 (learning rate)
-# For sph : 1e-9 (learning rate)
-
-# Poly(4)
-# For lin : 1e-11 (learning rate)
-# For sph : 1e-17 (learning rate)
-
-# Ridge-regression (on poly2)
-# For lin: 1000 (delta)
-# For sph: 1000 (delta)
-
-# 10-cross validation (2-degree polynomial)
-# For sph : 
-	# Mean error(over 10-fold cross validation): 0.898139576393
-	# Mean variance(over 10-fold cross validation): 0.00684527720511
-# For lin :
-	# Mean error(over 10-fold cross validation): 1.34054042398
-	# Mean variance(over 10-fold cross validation): 0.409364359781
-
-# 10-cross validation (10000 iterations)
-# For iris (learning rate = 1e-18,degree=10, delta has negligible effect unless very big)
-	# Mean error(over 10-fold cross validation): 0.259285737327
-	# Mean variance(over 10-fold cross validation): 0.00559854378787
-# For seeds (learning rate = 1e-17,degree=6, delta has negligible effect unless very big)
-	# Mean error(over 10-fold cross validation): 0.323402519063
-	# Mean variance(over 10-fold cross validation): 0.0448930435135
