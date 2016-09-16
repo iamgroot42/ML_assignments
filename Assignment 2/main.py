@@ -70,7 +70,7 @@ if __name__ == "__main__":
 	# Plot data v/s MSE graph
 	A,B = plot_graph(50, 90, 10, DATA, phi, iterations, delta)
 	plt.plot(A, B, c = 'blue')
-	plt.title('Data ratio v/s MSE curve for ' + fname + ' (ridge, linear kernel, delta = ' + str(delta) + ')')
+	plt.title('Data ratio v/s MSE curve for ' + fname + ' ( delta = ' + str(delta) + ')')
 	plt.show()
 	# Print mean, variance of erors for 10-fold cross validation
 	mean, variance = k_fold_cross_validation(DATA, phi, 10, iterations, delta)
