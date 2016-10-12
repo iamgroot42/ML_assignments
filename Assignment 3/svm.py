@@ -1,25 +1,24 @@
 import preprocess
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 import numpy as np
 
 
-def SVM_fit_and_predict(X, Y, predict):
-	LK = LinearSVC(C = 1.0, max_iter = 1000)
+def SVM_fit_and_predict(X, Y, predict, c, kern, gam):
+	LK = SVC(C = c, max_iter = 1000, kernel = kern, gamma = gam)
 	LK.fit(X, Y)
 	return LK.predict(predict)
 
 
-def accuracy(X_train, Y_train, X_test, Y_test):
+def accuracy(X_train, Y_train, X_test, Y_test, model, C, kernel, gamma):
 	correct_count = 0
-	Y_predicted = SVM_fit_and_predict(X_train, Y_train, X_test)
+	Y_predicted = model(X_train, Y_train, X_test, C, kernel, gamma)
 	for i in range(len(Y_predicted)):
 		if Y_predicted[i] == Y_test[i]:
 			correct_count += 1
 	return (100.0 * (correct_count/float(len(Y_predicted))))
 
 
-def k_fold_cross_validation(X, Y, grid_params):
-	k = len(grid_params)
+def k_fold_cross_validation(X, Y, k, model, C, kernel, gamma):
 	start = 0
 	eff_k = int((k * len(Y))/100.0)
 	accuracies = []
@@ -36,9 +35,10 @@ def k_fold_cross_validation(X, Y, grid_params):
 		# Validation data
 		validation_data = X[start:start + eff_k]
 		validation_labels = Y[start:start + eff_k]
-		accuracies.append(accuracy(modified_data, modified_labels, validation_data, validation_labels))
+		accuracies.append(accuracy(modified_data, modified_labels,validation_data, 
+			validation_labels, model, C, kernel, gamma))
 		start += eff_k
-	return accuracies
+	return np.mean(accuracies)
 
 
 if __name__ == "__main__":
@@ -48,5 +48,6 @@ if __name__ == "__main__":
 	test_sampled_X, test_sampled_Y = preprocess.sample_data(X_test, Y_test, 500)
 	EX, EY = preprocess.data_for_binary_classification(train_sampled_X, train_sampled_Y, 3, 8)
 	EX_, EY_ = preprocess.data_for_binary_classification(test_sampled_X, test_sampled_Y, 3, 8)
-	print accuracy(EX, EY, EX_, EY_)
-	print k_fold_cross_validation(EX, EY, [1.0,1.5,2.0,2.5,3.0])
+	print k_fold_cross_validation(EX, EY, 5, SVM_fit_and_predict, 1.0, 'linear', 'auto')
+	gamma = 0.01
+	print k_fold_cross_validation(EX, EY, 5, SVM_fit_and_predict, 1.0, 'rbf', gamma)
