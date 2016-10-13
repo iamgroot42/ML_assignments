@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.metrics import roc_curve
+import matplotlib.pyplot as plt
 import struct
 
 # Note : code snippet to skip first header for given ubyte file (which contains metadata) taken from
@@ -38,10 +40,33 @@ def data_for_binary_classification(X, Y, classA, classB):
 	for i in range(len(Y)):
 		if Y[i] == classA:
 			X_new.append(X[i])
-			Y_new.append(1)
+			Y_new.append(classA)
 		elif Y[i] == classB:
 			X_new.append(X[i])
-			Y_new.append(-1)
+			Y_new.append(classB)
 	X_new = np.array(X_new)
 	Y_new = np.array(Y_new)
 	return X_new, Y_new
+
+
+def plot_roc_curve(Y_test, Y_predicted):
+	fpr = dict()
+	tpr = dict()
+	if Y_test.shape[1] == 1:
+		fpr[0], tpr[0], _ = roc_curve(Y_test[:,0], Y_predicted[:])
+	else:
+		for i in range(Y_test.shape[1]):
+			fpr[i], tpr[i], _ = roc_curve(Y_test[:, i], Y_predicted[:, i])
+	plt.figure()
+	plt.xlim([0.0, 1.0])
+	plt.ylim([0.0, 1.05])
+	plt.xlabel('False Positive Rate')
+	plt.ylabel('True Positive Rate')
+	plt.title('ROC curve')
+	plt.legend(loc="lower right")
+	print fpr[0]
+	print tpr[0]
+	for label in tpr.keys():
+		plt.plot(fpr[label], tpr[label], color='darkorange', lw = 2, label='ROC curve')
+	plt.show()
+	exit()
