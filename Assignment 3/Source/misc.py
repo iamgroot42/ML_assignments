@@ -64,8 +64,6 @@ def plot_roc_curve(Y_test, Y_predicted):
 	plt.ylabel('True Positive Rate')
 	plt.title('ROC curve')
 	plt.legend(loc="lower right")
-	print fpr[0]
-	print tpr[0]
 	for label in tpr.keys():
-		plt.plot(fpr[label], tpr[label], color='darkorange', lw = 2, label='ROC curve')
+		plt.plot(fpr[label], tpr[label], lw = 2, label = 'ROC curve for ' + str(label))
 	plt.show()
