@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
 import struct
 
 # Note : code snippet to skip first header for given ubyte file (which contains metadata) taken from
@@ -14,6 +15,7 @@ def process_data(trainPath, testPath):
 	with open(trainPath, 'rb') as data:
 		magic, num, rows, cols = struct.unpack(">IIII", data.read(16))
 		X = np.fromfile(data, dtype=np.uint8).reshape(len(Y), rows * cols)
+	X, Y = shuffle(X, Y)
 	return X, Y
 
 
@@ -67,3 +69,5 @@ def plot_roc_curve(Y_test, Y_predicted):
 	for label in tpr.keys():
 		plt.plot(fpr[label], tpr[label], lw = 2, label = 'ROC curve for ' + str(label))
 	plt.show()
+
+# estimators_, classes_
