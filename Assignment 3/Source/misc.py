@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
+from sklearn.externals import joblib
 import struct
 
 # Note : code snippet to skip first header for given ubyte file (which contains metadata) taken from
@@ -70,4 +71,7 @@ def plot_roc_curve(Y_test, Y_predicted):
 		plt.plot(fpr[label], tpr[label], lw = 2, label = 'ROC curve for ' + str(label))
 	plt.show()
 
-# estimators_, classes_
+
+def save_onevsall(base, model):
+	for i in range(len(model.classes_)):
+		joblib.dump(model.estimators_[i], base + str(model.classes_[i]) + ".model")
