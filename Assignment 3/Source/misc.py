@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, confusion_matrix
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 from sklearn.externals import joblib
@@ -75,3 +75,34 @@ def plot_roc_curve(Y_test, Y_predicted):
 def save_onevsall(base, model):
 	for i in range(len(model.classes_)):
 		joblib.dump(model.estimators_[i], base + str(model.classes_[i]) + ".model")
+                             
+
+def load_and_test_model(file_path, X_test, Y_test, genCurve = False):
+	model = joblib.load(file_path)
+	accuracy = model.score(X_test, Y_test)
+	return accuracy
+	# scoreMatrix = confusion_matrix(Y_test, model.predict(X_test))
+	# if genCurve:
+	# 	tpr = np.zeros([1,nROCpts]) 
+	# 	fpr = np.zeros([1,nROCpts]) 
+	# 	nTrueLabels = np.count_nonzero(trueLabels) 
+	# 	nFalseLabels = np.size(trueLabels) - nTrueLabels 
+
+	# 	minScore = np.min(scoreMatrix)
+	# 	maxScore = np.max(scoreMatrix)
+	# 	rangeScore = maxScore - minScore
+
+	# 	thdArr = minScore + rangeScore * np.arange(0,1,1.0/nROCpts)
+	# 	for thd_i in range(nROCpts):
+	# 		thd = thdArr[thd_i]
+	# 		ind = np.where(scoreMatrix >= thd) 
+	# 		thisLabel = np.zeros([np.size(scoreMatrix,0),np.size(scoreMatrix,1)])
+	# 		thisLabel[ind] = 1
+	# 		tpr_mat = np.multiply(thisLabel,trueLabels)
+	# 		tpr[0,thd_i] = np.sum(tpr_mat)/nTrueLabels
+	# 		fpr_mat = np.multiply(thisLabel, 1-trueLabels)
+	# 		fpr[0,thd_i] = np.sum(fpr_mat)/nFalseLabels
+	# 	plt.xlim(min(fpr[0,:]), max(fpr[0,:]))
+	# 	plt.plot(fpr[0,:],tpr[0,:], 'b.-')    
+	# 	plt.show()
+	# return accuracy

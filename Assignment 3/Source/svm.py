@@ -44,7 +44,7 @@ def k_fold_cross_validation(X, Y, k, model, C, kernel, gamma):
 			validation_labels, C, kernel, gamma)[0])
 		start += eff_k
 	mean_accuracy = np.mean(accuracies)
-	print "Cross validation accuracy for (",str(C),",",str(kernel),") :",mean_accuracy
+	print "Cross validation accuracy for (",str(C),",",str(gamma),") :",mean_accuracy
 	return mean_accuracy
 
 
@@ -70,36 +70,43 @@ def grid_search(X, Y, k, model, kernel, grid1, grid2 = ['auto'], plot = False):
 	return opt_val
 
 
-if __name__ == "__main__":
-	# Process data
-	X_train, Y_train = misc.process_data("MNIST/train-images.idx3-ubyte", "MNIST/train-labels.idx1-ubyte")
-	X_test, Y_test = misc.process_data("MNIST/t10k-images.idx3-ubyte", "MNIST/t10k-labels.idx1-ubyte")
-	# C_grid = [1e-3,1e-2,1e-1,1e0,1e1]
+def training_phase(X_train, Y_train, X_test, Y_test):
 	C_grid = [1e-7, 1e-3, 1e1, 1e5]
 	gamma_grid = [1e-9, 1e-6, 1e-3]
-	# gamma_grid = [1e-5,1e-1,1e0,1e1,1e5]
+	# Part(a) : 3/8 binary classification
 	train_sampled_X, train_sampled_Y = misc.sample_data(X_train, Y_train, 2000)
 	test_sampled_X, test_sampled_Y = misc.sample_data(X_test, Y_test, 500)
-	# Part(a) : 3/8 binary classification
 	EX, EY = misc.data_for_binary_classification(train_sampled_X, train_sampled_Y, 3, 8)
 	EX_, EY_ = misc.data_for_binary_classification(test_sampled_X, test_sampled_Y, 3, 8)
 	opt_C, opt_gamma = grid_search(EX, EY, 5, SVM_fit_and_predict, 'linear', C_grid)
-	# test_accuracy, SVM_OBJ = SVM_fit_and_predict(EX, EY, EX_, EY_, opt_C, 'linear', opt_gamma, True)
-	test_accuracy, SVM_OBJ = SVM_fit_and_predict(EX, EY, EX_, EY_, opt_C, 'linear', opt_gamma)
+	test_accuracy, SVM_OBJ = SVM_fit_and_predict(EX, EY, EX_, EY_, opt_C, 'linear', opt_gamma, True)
 	print "Test error for (",str(opt_C),",",str(opt_gamma),") :",test_accuracy
 	joblib.dump(SVM_OBJ, "../Models/model_linear.model")
 	# Part(b) : multi-class classification
 	opt_C, opt_gamma = grid_search(train_sampled_X, train_sampled_Y, 5, SVM_fit_and_predict, 'linear', C_grid)
-	# test_accuracy, SVM_OBJ_2 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'linear', opt_gamma, True)
-	test_accuracy, SVM_OBJ_2 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'linear', opt_gamma)
+	test_accuracy, SVM_OBJ_2 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'linear', opt_gamma, True)
 	print "Test error for (",str(opt_C),",",str(opt_gamma),") :",test_accuracy
 	joblib.dump(SVM_OBJ_2, "../Models/multi.model")
-	misc.save_onevsall("../Models/multi", SVM_OBJ_2)
+	# misc.save_onevsall("../Models/multi", SVM_OBJ_2)
 	# Part(c) : RBF multi-class classification
 	opt_C, opt_gamma = grid_search(train_sampled_X, train_sampled_Y, 5, SVM_fit_and_predict, 'rbf', C_grid, gamma_grid)
-	# test_accuracy, SVM_OBJ_3 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'rbf', opt_gamma, True)
-	test_accuracy, SVM_OBJ_3 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'rbf', opt_gamma)
+	test_accuracy, SVM_OBJ_3 = SVM_fit_and_predict(train_sampled_X, train_sampled_Y, test_sampled_X, test_sampled_Y, opt_C, 'rbf', opt_gamma, True)
 	print "Test error for (",str(opt_C),",",str(opt_gamma),") :",test_accuracy
 	misc.save_onevsall("../Models/rbf", SVM_OBJ_3)
-	joblib.dump(SVM_OBJ_3, "../Models/rbf.model")
+	# joblib.dump(SVM_OBJ_3, "../Models/rbf.model")
+
+
+def testing_phase(X_test, Y_test):
+	test_sampled_X, test_sampled_Y = misc.sample_data(X_test, Y_test, 500)
+	print misc.load_and_test_model("../Models/multi.model", X_test, Y_test, True)
+
+
+if __name__ == "__main__":
+	# Process data
+	X_train, Y_train = misc.process_data("MNIST/train-images.idx3-ubyte", "MNIST/train-labels.idx1-ubyte")
+	X_test, Y_test = misc.process_data("MNIST/t10k-images.idx3-ubyte", "MNIST/t10k-labels.idx1-ubyte")
+	# Training Phase
+	# training_phase(X_train, Y_train, X_test, Y_test)
+	# Testing phase
+	testing_phase(X_test, Y_test)
 	
