@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import roc_curve, confusion_matrix
+from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 from sklearn.externals import joblib
@@ -52,23 +52,25 @@ def data_for_binary_classification(X, Y, classA, classB):
 	return X_new, Y_new
 
 
-def plot_roc_curve(Y_test, Y_predicted):
-	fpr = dict()
-	tpr = dict()
-	if Y_test.shape[1] == 1:
-		fpr[0], tpr[0], _ = roc_curve(Y_test[:,0], Y_predicted[:])
-	else:
-		for i in range(Y_test.shape[1]):
-			fpr[i], tpr[i], _ = roc_curve(Y_test[:, i], Y_predicted[:, i])
-	plt.figure()
-	plt.xlim([0.0, 1.0])
+def plot_roc_curve(fpr, tpr):
+	plt.xlim(min(fpr[0,:]), max(fpr[0,:]))
+	plt.plot(fpr[0,:],tpr[0,:], 'b.-')
 	plt.ylim([0.0, 1.05])
+	plt.title('Modified ROC curve')
 	plt.xlabel('False Positive Rate')
-	plt.ylabel('True Positive Rate')
-	plt.title('ROC curve')
+	plt.ylabel('Classification Accuracy')
+	plt.show()
+
+
+def plot_roc_curve_together(fpr1, tpr1, fpr2, tpr2):
+	plt.xlim(min(min(fpr1[0,:]),min(fpr2[0,:])), max(max(fpr1[0,:]),max(fpr2[0,:])))
+	plt.ylim([0.0, 1.05])
+	plt.plot(fpr1[0,:],tpr1[0,:], 'b.-', color='darkorange', label = 'ROC curve for Linear')
+	plt.plot(fpr2[0,:],tpr2[0,:], 'b.-', label = 'ROC curve for RBF')
+	plt.title('Modified ROC curve')
+	plt.xlabel('False Positive Rate')
+	plt.ylabel('Classification Accuracy')
 	plt.legend(loc="lower right")
-	for label in tpr.keys():
-		plt.plot(fpr[label], tpr[label], lw = 2, label = 'ROC curve for ' + str(label))
 	plt.show()
 
 
@@ -80,29 +82,27 @@ def save_onevsall(base, model):
 def load_and_test_model(file_path, X_test, Y_test, genCurve = False):
 	model = joblib.load(file_path)
 	accuracy = model.score(X_test, Y_test)
-	return accuracy
-	# scoreMatrix = confusion_matrix(Y_test, model.predict(X_test))
-	# if genCurve:
-	# 	tpr = np.zeros([1,nROCpts]) 
-	# 	fpr = np.zeros([1,nROCpts]) 
-	# 	nTrueLabels = np.count_nonzero(trueLabels) 
-	# 	nFalseLabels = np.size(trueLabels) - nTrueLabels 
+	if genCurve:
+		nROCpts = 100
+		tpr = np.zeros([1,nROCpts])
+		fpr = np.zeros([1,nROCpts])
 
-	# 	minScore = np.min(scoreMatrix)
-	# 	maxScore = np.max(scoreMatrix)
-	# 	rangeScore = maxScore - minScore
+		scoreMatrix =  model.decision_function(X_test)
+		nTrueLabels = np.count_nonzero(Y_test) 
+		nFalseLabels = np.size(Y_test) - nTrueLabels
 
-	# 	thdArr = minScore + rangeScore * np.arange(0,1,1.0/nROCpts)
-	# 	for thd_i in range(nROCpts):
-	# 		thd = thdArr[thd_i]
-	# 		ind = np.where(scoreMatrix >= thd) 
-	# 		thisLabel = np.zeros([np.size(scoreMatrix,0),np.size(scoreMatrix,1)])
-	# 		thisLabel[ind] = 1
-	# 		tpr_mat = np.multiply(thisLabel,trueLabels)
-	# 		tpr[0,thd_i] = np.sum(tpr_mat)/nTrueLabels
-	# 		fpr_mat = np.multiply(thisLabel, 1-trueLabels)
-	# 		fpr[0,thd_i] = np.sum(fpr_mat)/nFalseLabels
-	# 	plt.xlim(min(fpr[0,:]), max(fpr[0,:]))
-	# 	plt.plot(fpr[0,:],tpr[0,:], 'b.-')    
-	# 	plt.show()
-	# return accuracy
+		minScore = np.min(scoreMatrix)
+		maxScore = np.max(scoreMatrix)
+		rangeScore = maxScore - minScore
+		thdArr = minScore + rangeScore * np.arange(0,1,1.0/(nROCpts))
+
+		for thd_i in range(0,nROCpts):
+			thd = thdArr[thd_i]
+			ind = np.where(scoreMatrix>=thd) 
+			thisLabel = np.zeros([np.size(scoreMatrix,0),np.size(scoreMatrix,1)])
+			thisLabel[ind] = 1
+			tpr_mat = np.multiply(thisLabel,Y_test)
+			tpr[0,thd_i] = np.sum(tpr_mat)/nTrueLabels
+			fpr_mat = np.multiply(thisLabel, 1-Y_test)
+			fpr[0,thd_i] = np.sum(fpr_mat)/nFalseLabels
+	return accuracy, fpr, tpr
