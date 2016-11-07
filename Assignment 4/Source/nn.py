@@ -82,6 +82,7 @@ def auto_encoder(learning_rate, aune, ne, bs, autoencoder_weight_file):
 				nb_epoch=aune,
 				batch_size=bs,
 				validation_data=(X_test, X_test))
+	return autoencoder
 	# Compress input data according to learnt auto-encoder
 	X_train_comp = encoder.predict(X_train, batch_size=bs)
 	X_test_comp = encoder.predict(X_test, batch_size=bs)
@@ -104,12 +105,23 @@ def auto_encoder(learning_rate, aune, ne, bs, autoencoder_weight_file):
 	loss_and_metrics = model.evaluate(X_test_comp, y_test, batch_size=bs)
 	print "\n"
 	print "Classification accuracy:", loss_and_metrics[1]
-	return model
+
+
+def vis_weights(model):
+	model_number = 1
+	for x in model.get_weights():
+		z = x
+		if len(x.shape) == 1:
+			z = np.reshape(x, (x.shape[0], 1))
+		plt.matshow(z, fignum=100, cmap=plt.cm.gray)
+		savefig(str(model_number) + ".png")
+		model_number += 1
 
 
 if __name__ == "__main__":
 	# Question 3
-	# ffnn_cm = feed_forward_nn(10, 128, "FFNN_Adadelta_0.1")
-	# plot_conf_mat(ffnn_cm)
+	ffnn_cm = feed_forward_nn(10, 128, "FFNN_Adadelta_0.1")
+	plot_conf_mat(ffnn_cm)
 	# Question 4
 	m = auto_encoder(7, 20, 30, 128, 'autoencoder_weights.png')
+	vis_weights(m)
